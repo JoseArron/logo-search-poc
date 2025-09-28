@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server";
 
 import { normalizeLogoName } from "@/lib/dynamo";
-import { fetchPhotosByLogo } from "@/app/repositories/logo-index";
+import { fetchPhotosByLogo } from "@/lib/repositories/logo-index";
 
 export async function GET(
   _: Request,
-  context: { params: { logoName?: string } }
+  context: { params: Promise<{ logoName: string }> }
 ) {
   try {
-    const logoParam = context.params.logoName;
+    const params = await context.params;
+    const logoParam = params.logoName;
 
     if (!logoParam) {
       return NextResponse.json(
