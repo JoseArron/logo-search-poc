@@ -34,7 +34,7 @@ export function normalizeLogoName(name: string): string {
 
 export function resolvePublicUrl(
   publicUrl: string | undefined,
-  s3Key: string | undefined
+  s3Key: string | undefined,
 ): string | null {
   if (publicUrl) {
     return publicUrl;

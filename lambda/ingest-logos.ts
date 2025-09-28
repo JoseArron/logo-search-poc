@@ -45,7 +45,7 @@ const dynamo = DynamoDBDocumentClient.from(
   new DynamoDBClient({ region: REGION }),
   {
     marshallOptions: { removeUndefinedValues: true },
-  }
+  },
 );
 const visionClient = new vision.ImageAnnotatorClient();
 
@@ -95,7 +95,7 @@ async function listPhotos(): Promise<string[]> {
         Prefix: S3_PREFIX,
         ContinuationToken: continuationToken,
         MaxKeys: Math.min(MAX_ITEMS, 1000),
-      })
+      }),
     );
 
     const batchKeys = (response.Contents ?? [])
@@ -118,7 +118,7 @@ async function detectLogosForKey(key: string): Promise<LogoDetection[]> {
     new GetObjectCommand({
       Bucket: bucketName,
       Key: key,
-    })
+    }),
   );
 
   const body = getObjectResponse.Body;
@@ -176,7 +176,7 @@ async function asBuffer(stream: unknown): Promise<Buffer> {
     const readable = stream as NodeJS.ReadableStream;
     const chunks: Buffer[] = [];
     readable.on("data", (chunk) =>
-      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)),
     );
     readable.on("end", () => resolve(Buffer.concat(chunks)));
     readable.on("error", reject);
@@ -196,7 +196,7 @@ async function writeMappingBatch(batch: MappingRequest[]) {
     const response = await dynamo.send(
       new BatchWriteCommand({
         RequestItems: requestItems,
-      })
+      }),
     );
 
     const unprocessed = (response.UnprocessedItems?.[tableName] ??
@@ -206,7 +206,7 @@ async function writeMappingBatch(batch: MappingRequest[]) {
     }
 
     console.warn(
-      `Retrying ${unprocessed.length} unprocessed mapping writes...`
+      `Retrying ${unprocessed.length} unprocessed mapping writes...`,
     );
     requestItems = { [tableName]: unprocessed };
   } while (requestItems && requestItems[tableName].length > 0);
@@ -229,7 +229,7 @@ async function savePhoto(key: string, logos: LogoDetection[]) {
         detectedLogos: logos,
         createdAt: now,
       },
-    })
+    }),
   );
 
   if (logos.length === 0) {
@@ -297,7 +297,7 @@ async function savePhoto(key: string, logos: LogoDetection[]) {
         ExpressionAttributeNames: {
           "#total": "totalPhotos",
         },
-      })
+      }),
     );
   }
 }

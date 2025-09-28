@@ -1,5 +1,5 @@
-import { Gallery } from "@/components/gallery/gallery";
 import { fetchAllLogos, fetchAllPhotos } from "@/app/repositories/logo-index";
+import { Gallery } from "@/components/gallery/gallery";
 
 export default async function Home() {
   try {

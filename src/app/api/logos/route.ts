@@ -14,7 +14,7 @@ export async function GET() {
       {
         error: "Unable to load logos",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

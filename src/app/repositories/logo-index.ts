@@ -88,7 +88,7 @@ function mapPhotoItem(item: RawItem): PhotoRecord {
               (point: RawItem) => ({
                 x: asNumber(point.x ?? point[0]) ?? 0,
                 y: asNumber(point.y ?? point[1]) ?? 0,
-              })
+              }),
             );
           }
 
@@ -132,7 +132,7 @@ export async function fetchAllPhotos(): Promise<PhotoRecord[]> {
       ExpressionAttributeValues: {
         ":pk": PHOTO_PARTITION_KEY,
       },
-    })
+    }),
   );
 
   const photos = (Items ?? []).map(mapPhotoItem);
@@ -156,18 +156,18 @@ export async function fetchAllLogos(): Promise<LogoSummary[]> {
       ExpressionAttributeValues: {
         ":pk": LOGO_PARTITION_KEY,
       },
-    })
+    }),
   );
 
   const logos = (Items ?? []).map(mapLogoSummary);
 
   return logos.sort(
-    (a, b) => b.totalPhotos - a.totalPhotos || a.name.localeCompare(b.name)
+    (a, b) => b.totalPhotos - a.totalPhotos || a.name.localeCompare(b.name),
   );
 }
 
 export async function fetchPhotosByLogo(
-  logoNameOrSlug: string
+  logoNameOrSlug: string,
 ): Promise<PhotoRecord[]> {
   const tableName = getTableName();
   const slug = normalizeLogoName(logoNameOrSlug);
@@ -180,7 +180,7 @@ export async function fetchPhotosByLogo(
       ExpressionAttributeValues: {
         ":pk": partitionKey,
       },
-    })
+    }),
   );
 
   const mappings = Items ?? [];
@@ -227,11 +227,11 @@ export async function fetchPhotosByLogo(
             (photoId): DynamoKey => ({
               PK: PHOTO_PARTITION_KEY,
               SK: photoId,
-            })
+            }),
           ),
         },
       },
-    })
+    }),
   );
 
   const photoItems = batchResponse.Responses?.[tableName] ?? [];
@@ -245,7 +245,7 @@ export async function fetchPhotosByLogo(
 
         return [sortKey, mapPhotoItem(item)] as [string, PhotoRecord];
       })
-      .filter((entry): entry is [string, PhotoRecord] => Boolean(entry))
+      .filter((entry): entry is [string, PhotoRecord] => Boolean(entry)),
   );
 
   return uniquePhotoIds
