@@ -1,4 +1,35 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Logo Search Proof of Concept
+
+A Next.js application for detecting and searching logos in photos using Google Cloud Vision API, AWS S3, and DynamoDB.
+
+## Features
+
+- 📸 Logo detection using Google Cloud Vision API
+- 🔍 Filter photos by detected logos
+- 🎨 Clean UI with shadcn components
+- 📊 Multiple detections of the same logo per photo
+- 🗄️ Decoupled database design for maintainability
+
+## 🎯 Database Decoupling
+
+This project now supports a **decoupled multi-table design** for better separation of concerns. See:
+- **[README_DECOUPLING.md](README_DECOUPLING.md)** - Quick start guide
+- **[docs/DATABASE_DECOUPLING.md](docs/DATABASE_DECOUPLING.md)** - Complete migration guide
+- **[docs/ARCHITECTURE_COMPARISON.md](docs/ARCHITECTURE_COMPARISON.md)** - Design comparison & analysis
+
+### Quick Start with Decoupled Tables
+
+```bash
+# 1. Create DynamoDB tables
+./scripts/create-decoupled-tables.sh ap-southeast-2 logo-search
+
+# 2. Configure environment variables
+cp .env.example.decoupled .env.local
+# Edit .env.local with your credentials
+
+# 3. Run ingestion
+npm run ingest:decoupled
+```
 
 ## Getting Started
 
