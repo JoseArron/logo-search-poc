@@ -5,7 +5,7 @@ import { fetchPhotosByLogo } from "@/lib/repositories/logo-index";
 
 export async function GET(
   _: Request,
-  context: { params: Promise<{ logoName: string }> }
+  context: { params: Promise<{ logoName: string }> },
 ) {
   try {
     const params = await context.params;
@@ -14,7 +14,7 @@ export async function GET(
     if (!logoParam) {
       return NextResponse.json(
         { error: "Logo name is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -32,7 +32,7 @@ export async function GET(
       {
         error: "Unable to load photos for logo",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

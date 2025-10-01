@@ -23,7 +23,7 @@ export function Gallery({ initialPhotos, logos }: GalleryProps) {
     }
 
     return initialPhotos.filter((photo) =>
-      photo.logos?.some((logo) => logo.slug === selectedLogo)
+      photo.logos?.some((logo) => logo.slug === selectedLogo),
     );
   }, [initialPhotos, selectedLogo]);
 
@@ -128,7 +128,7 @@ export function Gallery({ initialPhotos, logos }: GalleryProps) {
                             "rounded-full border px-2 py-1 text-xs",
                             logo.slug === selectedLogo
                               ? "border-primary bg-primary/10 text-primary"
-                              : "border-border text-foreground"
+                              : "border-border text-foreground",
                           )}
                         >
                           {logo.name}
