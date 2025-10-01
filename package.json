@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "biome check",
     "format": "biome format --write",
-    "ingest": "tsx lambda/ingest-logos.ts"
+    "ingest": "tsx lambda/ingest-logos.ts",
+    "ingest:decoupled": "tsx lambda/ingest-logos-decoupled.ts"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",
