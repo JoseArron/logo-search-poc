@@ -63,11 +63,76 @@ export function Gallery({ initialPhotos, logos }: GalleryProps) {
               key={logo.slug}
               variant={selectedLogo === logo.slug ? "default" : "outline"}
               onClick={() => setSelectedLogo(logo.slug)}
+              className={cn(
+                "gap-2",
+                logo.firstPhotoUrl && logo.firstDetectionBounds
+                  ? "h-auto px-3 py-2"
+                  : ""
+              )}
+              title={logo.name}
             >
-              <span>{logo.name}</span>
-              <span className="text-muted-foreground ml-1 text-xs">
-                {logo.totalPhotos}
-              </span>
+              {logo.firstPhotoUrl && logo.firstDetectionBounds ? (
+                <>
+                  {(() => {
+                    const bounds = logo.firstDetectionBounds;
+                    const minX = Math.min(...bounds.map((p) => p.x));
+                    const maxX = Math.max(...bounds.map((p) => p.x));
+                    const minY = Math.min(...bounds.map((p) => p.y));
+                    const maxY = Math.max(...bounds.map((p) => p.y));
+                    const logoWidth = maxX - minX;
+                    const logoHeight = maxY - minY;
+                    const aspectRatio = logoWidth / logoHeight;
+
+                    // display size
+                    const displayHeight = 48;
+                    const displayWidth = Math.min(
+                      displayHeight * aspectRatio,
+                      200
+                    );
+
+                    return (
+                      <div
+                        className="relative overflow-hidden bg-gray-100"
+                        style={{
+                          height: `${displayHeight}px`,
+                          width: `${displayWidth}px`,
+                        }}
+                      >
+                        <Image
+                          src={logo.firstPhotoUrl}
+                          alt={logo.name}
+                          width={logoWidth}
+                          height={logoHeight}
+                          unoptimized={true}
+                          priority={true}
+                          className="absolute top-0 left-0"
+                          style={{
+                            position: "absolute",
+                            height: "auto",
+                            width: "auto",
+                            maxWidth: "none",
+                            objectFit: "none",
+                            transform: `scale(${displayHeight / logoHeight})`, // scale to fit height
+                            transformOrigin: "top left",
+                            left: `${-minX * (displayHeight / logoHeight)}px`,
+                            top: `${-minY * (displayHeight / logoHeight)}px`,
+                          }}
+                        />
+                      </div>
+                    );
+                  })()}
+                  <span className="text-muted-foreground ml-1 text-xs">
+                    {logo.totalPhotos}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span>{logo.name}</span>
+                  <span className="text-muted-foreground ml-1 text-xs">
+                    {logo.totalPhotos}
+                  </span>
+                </>
+              )}
             </Button>
           ))}
         </div>

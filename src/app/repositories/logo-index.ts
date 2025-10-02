@@ -1,4 +1,8 @@
-import { BatchGetCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import {
+  BatchGetCommand,
+  QueryCommand,
+  ScanCommand,
+} from "@aws-sdk/lib-dynamodb";
 
 import {
   dynamoDocClient,
@@ -29,6 +33,9 @@ export type LogoSummary = {
   name: string;
   totalPhotos: number;
   topConfidence?: number;
+  firstPhotoId?: string;
+  firstPhotoUrl?: string | null;
+  firstDetectionBounds?: Array<{ x: number; y: number }>;
 };
 
 type RawItem = Record<string, unknown>;
@@ -64,8 +71,8 @@ function asNumber(value: unknown): number | undefined {
 }
 
 function mapPhotoItem(item: RawItem): PhotoRecord {
-  const detectedLogos: LogoDetection[] = Array.isArray(item.detectedLogos)
-    ? (item.detectedLogos as RawItem[])
+  const detectedLogos: LogoDetection[] = Array.isArray(item.detections)
+    ? (item.detections as RawItem[])
         .map((logo) => {
           const name = asString(logo.name) ?? asString(logo.displayName) ?? "";
           if (!name) {
@@ -88,7 +95,7 @@ function mapPhotoItem(item: RawItem): PhotoRecord {
               (point: RawItem) => ({
                 x: asNumber(point.x ?? point[0]) ?? 0,
                 y: asNumber(point.y ?? point[1]) ?? 0,
-              }),
+              })
             );
           }
 
@@ -113,26 +120,34 @@ function mapLogoSummary(item: RawItem): LogoSummary {
   const fallbackName = asString(item.SK) ?? "";
   const name = asString(item.displayName) ?? fallbackName;
   const slug = normalizeLogoName(asString(item.SK) ?? name);
+  const firstPhotoId = asString(item.firstPhotoId);
+  const firstPhotoUrl = asString(item.firstPhotoUrl) ?? null;
+
+  const firstDetectionBounds = Array.isArray(item.firstDetectionBounds)
+    ? (item.firstDetectionBounds as RawItem[]).map((point: RawItem) => ({
+        x: asNumber(point.x) ?? 0,
+        y: asNumber(point.y) ?? 0,
+      }))
+    : undefined;
 
   return {
     slug,
     name,
     totalPhotos: Number(item.totalPhotos ?? item.count ?? 0),
     topConfidence: asNumber(item.topConfidence),
+    firstPhotoId,
+    firstPhotoUrl,
+    firstDetectionBounds,
   };
 }
 
 export async function fetchAllPhotos(): Promise<PhotoRecord[]> {
-  const tableName = getTableName();
+  const tableName = getTableName("photos");
 
   const { Items } = await dynamoDocClient.send(
-    new QueryCommand({
+    new ScanCommand({
       TableName: tableName,
-      KeyConditionExpression: "PK = :pk",
-      ExpressionAttributeValues: {
-        ":pk": PHOTO_PARTITION_KEY,
-      },
-    }),
+    })
   );
 
   const photos = (Items ?? []).map(mapPhotoItem);
@@ -147,40 +162,36 @@ export async function fetchAllPhotos(): Promise<PhotoRecord[]> {
 }
 
 export async function fetchAllLogos(): Promise<LogoSummary[]> {
-  const tableName = getTableName();
+  const tableName = getTableName("logos");
 
   const { Items } = await dynamoDocClient.send(
-    new QueryCommand({
+    new ScanCommand({
       TableName: tableName,
-      KeyConditionExpression: "PK = :pk",
-      ExpressionAttributeValues: {
-        ":pk": LOGO_PARTITION_KEY,
-      },
-    }),
+    })
   );
 
   const logos = (Items ?? []).map(mapLogoSummary);
 
   return logos.sort(
-    (a, b) => b.totalPhotos - a.totalPhotos || a.name.localeCompare(b.name),
+    (a, b) => b.totalPhotos - a.totalPhotos || a.name.localeCompare(b.name)
   );
 }
 
 export async function fetchPhotosByLogo(
-  logoNameOrSlug: string,
+  logoNameOrSlug: string
 ): Promise<PhotoRecord[]> {
-  const tableName = getTableName();
+  const mappingTableName = getTableName("photo-logos");
   const slug = normalizeLogoName(logoNameOrSlug);
   const partitionKey = `LOGO#${slug}`;
 
   const { Items } = await dynamoDocClient.send(
     new QueryCommand({
-      TableName: tableName,
+      TableName: mappingTableName,
       KeyConditionExpression: "PK = :pk",
       ExpressionAttributeValues: {
         ":pk": partitionKey,
       },
-    }),
+    })
   );
 
   const mappings = Items ?? [];
@@ -219,22 +230,24 @@ export async function fetchPhotosByLogo(
     return [];
   }
 
+  const photoTableName = getTableName("photos");
+
   const batchResponse = await dynamoDocClient.send(
     new BatchGetCommand({
       RequestItems: {
-        [tableName]: {
+        [photoTableName]: {
           Keys: uniquePhotoIds.map(
             (photoId): DynamoKey => ({
               PK: PHOTO_PARTITION_KEY,
               SK: photoId,
-            }),
+            })
           ),
         },
       },
-    }),
+    })
   );
 
-  const photoItems = batchResponse.Responses?.[tableName] ?? [];
+  const photoItems = batchResponse.Responses?.[photoTableName] ?? [];
   const photoMap = new Map(
     photoItems
       .map((item) => {
@@ -245,7 +258,7 @@ export async function fetchPhotosByLogo(
 
         return [sortKey, mapPhotoItem(item)] as [string, PhotoRecord];
       })
-      .filter((entry): entry is [string, PhotoRecord] => Boolean(entry)),
+      .filter((entry): entry is [string, PhotoRecord] => Boolean(entry))
   );
 
   return uniquePhotoIds

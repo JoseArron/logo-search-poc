@@ -14,11 +14,19 @@ export const dynamoDocClient = DynamoDBDocumentClient.from(initClient, {
   },
 });
 
-export function getTableName(): string {
-  const table = process.env.DYNAMO_TABLE;
+export function getTableName(
+  tableType: "photos" | "logos" | "photo-logos",
+): string {
+  const envKey = {
+    photos: "DYNAMO_TABLE_PHOTOS",
+    logos: "DYNAMO_TABLE_LOGOS",
+    "photo-logos": "DYNAMO_TABLE_PHOTO_LOGOS",
+  }[tableType];
+
+  const table = process.env[envKey];
 
   if (!table) {
-    throw new Error("DYNAMO_TABLE env var is required.");
+    throw new Error(`${envKey} env var is required.`);
   }
 
   return table;
